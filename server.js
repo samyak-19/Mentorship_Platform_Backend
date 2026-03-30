@@ -36,12 +36,34 @@ io.on("connection", (socket) => {
 
 
  // 🔥 NEW: CHAT MESSAGE
-  socket.on("send-message", ({ sessionId, message }) => {
-    //  console.log("Message received on server:", message);
-    // send message to all users in same room
+  socket.on("send-message",async ({ sessionId, message, user   }) => {
+    console.log("Saving message:", message);
+
+     // ✅ Save to database
+  const { data, error } = await supabase
+    .from("messages")
+    .insert([
+      {
+        session_id: sessionId,
+        message,
+        sender_id: user.id,
+      },
+    ])
+    .select();
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const savedMessage = data[0];
+
+
+
     io.to(sessionId).emit("receive-message", {
-      message,
-      time: new Date().toLocaleTimeString(),
+      message: savedMessage.message,
+      time: new Date(savedMessage.created_at).toLocaleTimeString(),
+      user, 
     });
   });
 
@@ -106,6 +128,23 @@ app.post("/session/end", async (req, res) => {
   res.json({ message: "Session ended" });
 });
 
+app.get("/messages/:sessionId", async (req, res) => {
+  const { sessionId } = req.params;
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Supabase error:",error);
+    return res.status(500).json({ error: error.message });
+  }
+  
+  console.log("Fetched messages from DB:", data);
+  res.json(data);
+});
 
 
 server.listen(5000, () => {
