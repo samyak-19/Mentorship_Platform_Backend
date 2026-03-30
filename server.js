@@ -29,6 +29,20 @@ io.on("connection", (socket) => {
     socket.join(sessionId);
   });
 
+  // 🔥 VIDEO CALL SIGNALING
+
+  socket.on("offer", ({ sessionId, offer }) => {
+    socket.to(sessionId).emit("offer", offer);
+  });
+
+  socket.on("answer", ({ sessionId, answer }) => {
+    socket.to(sessionId).emit("answer", answer);
+  });
+
+  socket.on("ice-candidate", ({ sessionId, candidate }) => {
+    socket.to(sessionId).emit("ice-candidate", candidate);
+  });
+
    // 🔥 CODE SYNC
   socket.on("code-change", ({ sessionId, code }) => {
     socket.to(sessionId).emit("code-update", code);
