@@ -20,13 +20,49 @@ const io = new Server(server, {
   },
 });
 
+
 // 🔥 SOCKET LOGIC (REAL-TIME PART)
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
+  let currentSession = null;
 
   // Join a specific session room
-  socket.on("join-session", (sessionId) => {
+  socket.on("join-session",async ({sessionId, userId }) => {
+     console.log("JOIN DATA:", sessionId, userId);
+
+     const { data, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .single();
+
+  if (error || !data || !data.active) {
+    socket.emit("session-invalid", {
+      message: "Session not found or inactive",
+    });
+    return;
+  }
+
     socket.join(sessionId);
+    currentSession = sessionId;
+   
+    // 🔥 FIRST USER = MENTOR
+    const role =
+  String(data.mentor_id) === String(userId)
+    ? "mentor"
+    : "student";
+
+    console.log("DB mentor_id:", data.mentor_id);
+console.log("UserId:", userId);
+console.log("MATCH:", String(data.mentor_id) === String(userId));
+
+    socket.emit("role", role);
+
+  // 🔥 notify others
+  socket.to(sessionId).emit("user-joined", {
+    message: "A user joined the session",
+    time: new Date().toLocaleTimeString(),
+    });
   });
 
   // 🔥 VIDEO CALL SIGNALING
@@ -83,6 +119,12 @@ io.on("connection", (socket) => {
 
 
   socket.on("disconnect", () => {
+  if (currentSession) {
+    socket.to(currentSession).emit("user-left", {
+      message: "A user left the session",
+      time: new Date().toLocaleTimeString(),
+    });
+  }
     console.log("User disconnected");
   });
 });
