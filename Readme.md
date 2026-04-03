@@ -6,7 +6,7 @@ A scalable real-time backend for MentorHub using **Node.js, Express, Socket.io, 
 
 ## 🌐 Live API
 
-https://your-backend.onrender.com
+https://mentorship-platform-backend-hbm1.onrender.com
 
 ---
 
