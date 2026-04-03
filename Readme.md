@@ -216,7 +216,7 @@ node server.js
 
 ## 👨‍💻 Author
 
-Your Name
+Samyak
 
 ---
 
